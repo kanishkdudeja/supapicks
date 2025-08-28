@@ -1,38 +1,22 @@
-"use client";
+import { redirect } from 'next/navigation'
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { LogoutButton } from '@/components/auth/logout-button'
+import { createClient } from '@/lib/supabase/server'
 
-export default function TestContestsPage() {
-  const [contests, setContests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function ProtectedPage() {
+  const supabase = await createClient()
 
-  useEffect(() => {
-    async function fetchContests() {
-    const supabase = createClient();
-      const { data, error } = await supabase.from("contests").select("*");
-      if (error) {
-        console.error("Error fetching contests:", error);
-      } else {
-        setContests(data || []);
-      }
-      setLoading(false);
-    }
-    fetchContests();
-  }, []);
-
-  if (loading) return <p>Loading contests...</p>;
+  const { data, error } = await supabase.auth.getClaims()
+  if (error || !data?.claims) {
+    redirect('/auth/login')
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Contests</h1>
-      <ul className="list-disc pl-6">
-        {contests.map((contest) => (
-          <li key={contest.id}>
-            {contest.name} — Starts: {new Date(contest.start_time).toLocaleString()}
-          </li>
-        ))}
-      </ul>
+    <div className="flex h-svh w-full items-center justify-center gap-2">
+      <p>
+        Hello <span>{data.claims.email}</span>
+      </p>
+      <LogoutButton />
     </div>
-  );
+  )
 }
