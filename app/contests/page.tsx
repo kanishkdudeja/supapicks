@@ -1,22 +1,22 @@
-import { redirect } from 'next/navigation'
+import { Navigation } from '@/components/navigation'
+import { ContestList } from '@/components/contests/contest-list'
+import { requireAuth } from '@/lib/supabase/server'
 
-import { LogoutButton } from '@/components/auth/logout-button'
-import { createClient } from '@/lib/supabase/server'
-
-export default async function ProtectedPage() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase.auth.getClaims()
-  if (error || !data?.claims) {
-    redirect('/auth/login')
-  }
+export default async function ContestsPage() {
+  const user = await requireAuth()
 
   return (
-    <div className="flex h-svh w-full items-center justify-center gap-2">
-      <p>
-        Hello <span>{data.claims.email}</span>
-      </p>
-      <LogoutButton />
+    <div className="min-h-screen bg-gray-50">
+      <Navigation user={user} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Stock Picking Contests</h1>
+          <p className="mt-2 text-gray-600">
+            Join contests, pick your stocks, and compete with other investors!
+          </p>
+        </div>
+        <ContestList user={user} />
+      </main>
     </div>
   )
 }
