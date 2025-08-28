@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -26,4 +27,11 @@ export async function createClient() {
       },
     }
   )
+}
+
+export async function requireAuth() {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) redirect('/')
+  return user
 }
