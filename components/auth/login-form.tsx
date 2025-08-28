@@ -3,13 +3,7 @@
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Github } from 'lucide-react'
 import { useState } from 'react'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -26,7 +20,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          // redirectTo: `${window.location.origin}/auth/oauth?next=/protected`,
           redirectTo: `${window.location.origin}/auth/callback?next=/contests`,
         },
       })
@@ -40,22 +33,33 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Supapicks!</CardTitle>
-          <CardDescription>Pick. Compete. Win.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSocialLogin}>
-            <div className="flex flex-col gap-6">
-              {error && <p className="text-sm text-destructive-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Log in with GitHub'}
-              </Button>
+      <form onSubmit={handleSocialLogin}>
+        <div className="flex flex-col gap-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-600">{error}</p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          )}
+          
+          <Button 
+            type="submit" 
+            className="bg-blue-600 hover:bg-blue-700 text-white py-5 px-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Github className="h-6 w-6" />
+                <span>Sign in with GitHub</span>
+              </div>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
