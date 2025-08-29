@@ -18,7 +18,6 @@ interface ContestListProps {
 export function ContestList({ user }: ContestListProps) {
   const [contests, setContests] = useState<ContestWithParticipants[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
 
   const supabase = createClient()
 
@@ -90,20 +89,9 @@ export function ContestList({ user }: ContestListProps) {
     }
   }
 
-  // Filter contests based on active tab
-  const filteredContests = activeTab === 'all' 
-    ? contests 
-    : contests.filter(contest => contest.has_user_joined)
-
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* Tab Toggle Skeleton */}
-        <div className="flex space-x-1 p-1 bg-gray-100 rounded-lg w-fit">
-          <div className="w-20 h-10 bg-gray-200 rounded-md animate-pulse"></div>
-          <div className="w-20 h-10 bg-gray-200 rounded-md animate-pulse"></div>
-        </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -127,30 +115,6 @@ export function ContestList({ user }: ContestListProps) {
   if (contests.length === 0) {
     return (
       <div className="space-y-6">
-        {/* Tab Toggle */}
-        <div className="flex space-x-1 p-1 bg-gray-100 rounded-lg w-fit">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'all'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            All Contests
-          </button>
-          <button
-            onClick={() => setActiveTab('my')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'my'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            My Contests
-          </button>
-        </div>
-
         <div className="text-center py-12">
           <Trophy className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No contests yet</h3>
@@ -164,46 +128,24 @@ export function ContestList({ user }: ContestListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Tab Toggle */}
-      <div className="flex space-x-1 p-1 bg-gray-100 rounded-lg w-fit">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'all'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          All Contests
-        </button>
-        <button
-          onClick={() => setActiveTab('my')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'my'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          My Contests
-        </button>
-      </div>
-
-      {/* Contest Count */}
+      {/* Contest Count - simplified */}
       <div className="text-sm text-gray-600">
-        {activeTab === 'all' 
-          ? `Showing ${filteredContests.length} contest${filteredContests.length !== 1 ? 's' : ''}`
-          : `You've joined ${filteredContests.length} contest${filteredContests.length !== 1 ? 's' : ''}`
-        }
+        {contests.length} contest{contests.length !== 1 ? 's' : ''} available
       </div>
 
       {/* Contests Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredContests.map((contest) => {
+        {contests.map((contest) => {
           const status = getContestStatus(contest)
           const canJoin = !contest.has_user_joined && (status.status === 'upcoming' || status.status === 'active')
 
           return (
-            <Card key={contest.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={contest.id} 
+              className={`hover:shadow-md transition-shadow ${
+                contest.has_user_joined ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
+              }`}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -214,9 +156,17 @@ export function ContestList({ user }: ContestListProps) {
                       </CardDescription>
                     </Link>
                   </div>
-                  <Badge className={status.color}>
-                    {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={status.color}>
+                      {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+                    </Badge>
+                    {/* Add joined indicator */}
+                    {contest.has_user_joined && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                        ✓ Joined
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -272,23 +222,6 @@ export function ContestList({ user }: ContestListProps) {
           )
         })}
       </div>
-
-      {/* Empty State for My Contests */}
-      {activeTab === 'my' && filteredContests.length === 0 && (
-        <div className="text-center py-12">
-          <Trophy className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No contests joined yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Join your first contest to get started!
-          </p>
-          <Button 
-            onClick={() => setActiveTab('all')} 
-            className="mt-4 bg-blue-600 hover:bg-blue-700"
-          >
-            Browse Contests
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
