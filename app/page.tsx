@@ -1,15 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trophy, TrendingUp, Users, Clock, DollarSign, Github } from 'lucide-react'
+import { Trophy, Github } from 'lucide-react'
 import { LoginForm } from '@/components/auth/login-form'
 
 export default async function LandingPage() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  
-  // If user is logged in, redirect to contests
+
   if (user) {
     redirect('/contests')
   }
