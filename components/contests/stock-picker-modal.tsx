@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 
 import { Search } from "lucide-react";
-import { Contest, User } from "@/lib/types";
+import { Contest, User, StockData } from "@/lib/types";
 
 interface StockPickerModalProps {
   contest: Contest;
@@ -20,14 +20,6 @@ interface StockPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-}
-
-interface StockData {
-  symbol: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  companyName: string;
 }
 
 export function StockPickerModal({
@@ -62,15 +54,12 @@ export function StockPickerModal({
     setStockData(null);
 
     try {
-      console.log("Searching for ticker:", ticker.toUpperCase());
-
       const response = await fetch(
         `/api/stocks/search?ticker=${ticker.toUpperCase()}`,
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Response error text:", errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
@@ -143,7 +132,6 @@ export function StockPickerModal({
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {/* Ticker Search */}
             <div>
               <label
                 htmlFor="ticker"
@@ -158,7 +146,7 @@ export function StockPickerModal({
                   value={ticker}
                   onChange={(e) => setTicker(e.target.value.toUpperCase())}
                   onKeyPress={handleKeyPress}
-                  placeholder="e.g., AAPL, MSFT, GOOGL"
+                  placeholder="e.g., AAPL, GOOGL, BTC-USD"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 />
@@ -175,14 +163,12 @@ export function StockPickerModal({
               </p>
             </div>
 
-            {/* Error Display */}
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
                 {error}
               </div>
             )}
 
-            {/* Stock Data Display */}
             {stockData && (
               <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
@@ -197,7 +183,7 @@ export function StockPickerModal({
                   <div className="text-right">
                     <div className="text-sm text-gray-600">Current Price</div>
                     <div className="text-xl font-bold text-green-600">
-                      ${(stockData.price || 0).toFixed(2)}
+                      ${stockData.price.toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -207,7 +193,7 @@ export function StockPickerModal({
                     <div>
                       With $1000, you can buy{" "}
                       <span className="font-bold">
-                        {(1000 / (stockData.price || 1)).toFixed(4)} shares
+                        {(1000 / stockData.price).toFixed(4)} shares
                       </span>
                     </div>
                   </div>
@@ -215,7 +201,6 @@ export function StockPickerModal({
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex space-x-3 pt-4">
               <Button
                 variant="outline"
