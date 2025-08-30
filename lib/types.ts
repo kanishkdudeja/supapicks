@@ -41,3 +41,17 @@ export interface LeaderboardEntry {
   gain_loss_percentage: number;
   rank: number;
 }
+
+export const getContestStatus = (contest: Contest) => {
+  const now = new Date();
+  const startTime = new Date(contest.start_time);
+  const endTime = new Date(contest.end_time);
+
+  if (now < startTime) {
+    return "upcoming";
+  } else if (now >= startTime && now <= endTime) {
+    return "active";
+  } else {
+    return "ended";
+  }
+};
