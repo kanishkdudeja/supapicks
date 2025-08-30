@@ -1,124 +1,133 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-import { Search, DollarSign, X } from 'lucide-react'
-import { Contest, User } from '@/lib/types'
+import { Search, DollarSign, X } from "lucide-react";
+import { Contest, User } from "@/lib/types";
 
 interface StockPickerModalProps {
-  contest: Contest
-  user: User,
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+  contest: Contest;
+  user: User;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 interface StockData {
-  symbol: string
-  price: number
-  change: number
-  changePercent: number
-  companyName: string
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  companyName: string;
 }
 
-export function StockPickerModal({ contest, user, isOpen, onClose, onSuccess }: StockPickerModalProps) {
-  const [ticker, setTicker] = useState('')
-  const [stockData, setStockData] = useState<StockData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [joining, setJoining] = useState(false)
+export function StockPickerModal({
+  contest,
+  user,
+  isOpen,
+  onClose,
+  onSuccess,
+}: StockPickerModalProps) {
+  const [ticker, setTicker] = useState("");
+  const [stockData, setStockData] = useState<StockData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
 
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setTicker('')
-      setStockData(null)
-      setError(null)
+      setTicker("");
+      setStockData(null);
+      setError(null);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const searchStock = async () => {
-    if (!ticker.trim()) return
+    if (!ticker.trim()) return;
 
-    setLoading(true)
-    setError(null)
-    setStockData(null)
+    setLoading(true);
+    setError(null);
+    setStockData(null);
 
     try {
-      console.log('Searching for ticker:', ticker.toUpperCase())
-      
-      // Use Yahoo Finance API to get stock data
-      const response = await fetch(`/api/stocks/search?ticker=${ticker.toUpperCase()}`)
-      
-      console.log('Response status:', response.status)
-      console.log('Response ok:', response.ok)
-      
+      console.log("Searching for ticker:", ticker.toUpperCase());
+
+      const response = await fetch(
+        `/api/stocks/search?ticker=${ticker.toUpperCase()}`,
+      );
+
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Response error text:', errorText)
-        throw new Error(`HTTP ${response.status}: ${errorText}`)
+        const errorText = await response.text();
+        console.error("Response error text:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      const data = await response.json()
-      console.log('Response data:', data)
-      
+      const data = await response.json();
+
       if (data.error) {
-        throw new Error(data.error)
+        throw new Error(data.error);
       }
 
-      setStockData(data)
+      setStockData(data);
     } catch (error) {
-      console.error('Error searching stock:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch stock data')
+      console.error("Error searching stock:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch stock data",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const joinContest = async () => {
     if (!stockData || !stockData.price) {
-      setError('Invalid stock data. Please try searching again.')
-      return
+      setError("Invalid stock data. Please try searching again.");
+      return;
     }
 
-    setJoining(true)
+    setJoining(true);
     try {
-      const quantity = 1000 / stockData.price
+      const quantity = 1000 / stockData.price;
 
-      const { error: pickError } = await supabase
-        .from('picks')
-        .insert({
-          contest_id: contest.id,
-          user_id: user.id,
-          ticker: stockData.symbol,
-          quantity: quantity,
-          buy_price: stockData.price
-        })
+      const { error: pickError } = await supabase.from("picks").insert({
+        contest_id: contest.id,
+        user_id: user.id,
+        ticker: stockData.symbol,
+        quantity: quantity,
+        buy_price: stockData.price,
+      });
 
-      if (pickError) throw pickError
+      if (pickError) throw pickError;
 
-      onSuccess()
-      onClose()
+      onSuccess();
+      onClose();
     } catch (error) {
-      console.error('Error joining contest:', error)
-      setError('Failed to join contest. Please try again.')
+      console.error("Error joining contest:", error);
+      setError("Failed to join contest. Please try again.");
     } finally {
-      setJoining(false)
+      setJoining(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      searchStock()
+    if (e.key === "Enter") {
+      searchStock();
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -128,24 +137,19 @@ export function StockPickerModal({ contest, user, isOpen, onClose, onSuccess }: 
             <div>
               <CardTitle>Join Contest</CardTitle>
               <CardDescription>
-                Pick your stock for &quot;{contest.name}&quot;
+                Pick your security for &quot;{contest.name}&quot;
               </CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             {/* Ticker Search */}
             <div>
-              <label htmlFor="ticker" className="block text-sm font-medium text-gray-700 mb-2">
-                Stock Ticker Symbol
+              <label
+                htmlFor="ticker"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Ticker Symbol
               </label>
               <div className="flex space-x-2">
                 <input
@@ -163,11 +167,11 @@ export function StockPickerModal({ contest, user, isOpen, onClose, onSuccess }: 
                   disabled={loading || !ticker.trim()}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
-                  {loading ? '...' : <Search className="h-4 w-4" />}
+                  {loading ? "..." : <Search className="h-4 w-4" />}
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Enter a Nasdaq-listed stock ticker symbol
+                Enter a ticker symbol
               </p>
             </div>
 
@@ -183,24 +187,28 @@ export function StockPickerModal({ contest, user, isOpen, onClose, onSuccess }: 
               <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-lg">{stockData.symbol}</h3>
-                    <p className="text-sm text-gray-600">{stockData.companyName}</p>
+                    <h3 className="font-semibold text-lg">
+                      {stockData.symbol}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {stockData.companyName}
+                    </p>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-600">Current Price</div>
-                    <div className="text-xl font-bold text-green-600">${(stockData.price || 0).toFixed(2)}</div>
+                    <div className="text-xl font-bold text-green-600">
+                      ${(stockData.price || 0).toFixed(2)}
+                    </div>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 p-3 rounded-md">
                   <div className="text-sm text-blue-900">
-                    <div className="flex items-center mb-1">
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      <span className="font-medium">Portfolio Calculation</span>
-                    </div>
-                    <div>With $1000, you can buy <span className="font-bold">{(1000 / (stockData.price || 1)).toFixed(4)} shares</span></div>
-                    <div className="text-xs text-blue-700 mt-1">
-                      Total Value: ${((1000 / (stockData.price || 1)) * (stockData.price || 1)).toFixed(2)}
+                    <div>
+                      With $1000, you can buy{" "}
+                      <span className="font-bold">
+                        {(1000 / (stockData.price || 1)).toFixed(4)} shares
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -222,12 +230,12 @@ export function StockPickerModal({ contest, user, isOpen, onClose, onSuccess }: 
                 disabled={!stockData || joining}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
-                {joining ? 'Joining...' : 'Join Contest'}
+                {joining ? "Joining..." : "Join Contest"}
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }
