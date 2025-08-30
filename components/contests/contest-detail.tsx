@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Contest, Pick, LeaderboardEntry } from "@/lib/types";
+import {
+  Contest,
+  Pick,
+  LeaderboardEntry,
+  User,
+  getContestStatus,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { StockPickerModal } from "./stock-picker-modal";
-import { User } from "@/lib/types";
 
 interface ContestDetailProps {
   contest: Contest;
@@ -37,35 +42,24 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
 
   const fetchContestData = async () => {
     try {
-      // Fetch user's pick for this contest
-      const { data: pickData, error: pickError } = await supabase
+      const { data, error } = await supabase
         .from("picks")
         .select("*")
-        .eq("contest_id", contest.id)
-        .eq("user_id", user.id)
-        .single();
+        .eq("contest_id", contest.id);
 
-      if (pickData) {
-        setUserPick(pickData);
+      if (error) {
+        throw error;
       }
 
-      // Fetch participant count
-      const { count } = await supabase
-        .from("picks")
-        .select("*", { count: "exact", head: true })
-        .eq("contest_id", contest.id);
+      if (data) {
+        const userPickData = data.find((pick) => pick.user_id === user.id);
+        setUserPick(userPickData || null);
 
-      setParticipantCount(count || 0);
+        // Set participant count from the length of picks
+        setParticipantCount(data.length);
 
-      // Fetch leaderboard - simplified for now
-      const { data: leaderboardData, error: leaderboardError } = await supabase
-        .from("picks")
-        .select("*")
-        .eq("contest_id", contest.id);
-
-      if (leaderboardData) {
-        // Sort by portfolio value (for now using buy price * quantity)
-        const sortedEntries = leaderboardData
+        // Process leaderboard data
+        const sortedEntries = data
           .map((entry, index) => ({
             user_id: entry.user_id,
             user_name: "Anonymous", // We'll add user names later
@@ -82,6 +76,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
         setLeaderboard(sortedEntries);
       }
     } catch (error) {
+      // TODO: Handle error on the UI
       console.error("Error fetching contest data:", error);
     } finally {
       setLoading(false);
@@ -93,35 +88,8 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     fetchContestData();
   };
 
-  const getContestStatus = () => {
-    const now = new Date();
-    const startTime = new Date(contest.start_time);
-    const endTime = new Date(contest.end_time);
-
-    if (now < startTime) {
-      return {
-        status: "upcoming",
-        color: "bg-blue-100 text-blue-800",
-        text: "Upcoming",
-      };
-    } else if (now >= startTime && now <= endTime) {
-      return {
-        status: "active",
-        color: "bg-green-100 text-green-800",
-        text: "Active",
-      };
-    } else {
-      return {
-        status: "ended",
-        color: "bg-gray-100 text-gray-800",
-        text: "Ended",
-      };
-    }
-  };
-
-  const status = getContestStatus();
-  const canJoin =
-    !userPick && (status.status === "upcoming" || status.status === "active");
+  const status = getContestStatus(contest);
+  const canJoin = !userPick && (status === "upcoming" || status === "active");
 
   if (loading) {
     return (
@@ -155,6 +123,12 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     );
   }
 
+  const statusColorMap = {
+    upcoming: "bg-blue-100 text-blue-800",
+    active: "bg-green-100 text-green-800",
+    ended: "bg-gray-100 text-gray-800",
+  };
+
   return (
     <div className="space-y-6">
       {/* Contest Header */}
@@ -164,7 +138,9 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
                 <CardTitle className="text-2xl">{contest.name}</CardTitle>
-                <Badge className={status.color}>{status.text}</Badge>
+                <Badge className={statusColorMap[status]}>
+                  {status[0].toUpperCase() + status.slice(1)}
+                </Badge>
               </div>
               <CardDescription className="text-lg">
                 {contest.description || "No description provided"}
@@ -225,9 +201,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
               <Trophy className="h-5 w-5 text-yellow-600" />
               <span>Leaderboard</span>
             </CardTitle>
-            <CardDescription>
-              Current rankings based on portfolio value
-            </CardDescription>
+            <CardDescription>Current rankings</CardDescription>
           </CardHeader>
           <CardContent>
             {leaderboard.length === 0 ? (
@@ -239,7 +213,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
               </div>
             ) : (
               <div className="space-y-3">
-                {leaderboard.slice(0, 10).map((entry) => (
+                {leaderboard.map((entry) => (
                   <div
                     key={entry.user_id}
                     className="flex items-center justify-between p-3 border rounded-lg"

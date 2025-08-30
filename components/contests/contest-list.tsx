@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { User, Contest } from "@/lib/types";
+import { User, getContestStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,20 +31,6 @@ const fetchContests = async () => {
     return data;
   } catch (error) {
     throw error;
-  }
-};
-
-const getContestStatus = (contest: Contest) => {
-  const now = new Date();
-  const startTime = new Date(contest.start_time);
-  const endTime = new Date(contest.end_time);
-
-  if (now < startTime) {
-    return "upcoming";
-  } else if (now >= startTime && now <= endTime) {
-    return "active";
-  } else {
-    return "ended";
   }
 };
 
