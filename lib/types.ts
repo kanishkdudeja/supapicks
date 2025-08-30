@@ -42,6 +42,14 @@ export interface LeaderboardEntry {
   rank: number;
 }
 
+export interface StockData {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  companyName: string;
+}
+
 export const getContestStatus = (contest: Contest) => {
   const now = new Date();
   const startTime = new Date(contest.start_time);
