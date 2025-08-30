@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { Search, DollarSign, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { Contest, User } from "@/lib/types";
 
 interface StockPickerModalProps {
