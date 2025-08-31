@@ -27,6 +27,14 @@ export interface User {
   };
 }
 
+export interface Contestant {
+  id: string;
+  username: string;
+  full_name: string;
+  email: string;
+  avatar_url: string;
+}
+
 export interface ContestWithParticipants extends Contest {
   participant_count: number;
 }

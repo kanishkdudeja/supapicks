@@ -7,6 +7,7 @@ import {
   Pick,
   LeaderboardEntry,
   User,
+  Contestant,
   getContestStatus,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -42,34 +43,55 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
 
   const fetchContestData = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: picksData, error: picksError } = await supabase
         .from("picks")
         .select("*")
         .eq("contest_id", contest.id);
 
-      if (error) {
-        throw error;
+      if (picksError) {
+        throw picksError;
       }
 
-      if (data) {
-        const userPickData = data.find((pick) => pick.user_id === user.id);
+      if (picksData) {
+        const userPickData = picksData.find((pick) => pick.user_id === user.id);
         setUserPick(userPickData || null);
 
         // Set participant count from the length of picks
-        setParticipantCount(data.length);
+        setParticipantCount(picksData.length);
 
-        // Process leaderboard data
-        const sortedEntries = data
-          .map((entry, index) => ({
-            user_id: entry.user_id,
-            user_name: "Anonymous", // We'll add user names later
-            avatar_url: undefined,
-            ticker: entry.ticker,
-            total_value: entry.quantity * entry.buy_price,
-            gain_loss: 0, // No gain/loss yet since we're using buy prices
-            gain_loss_percentage: 0,
-            rank: index + 1,
-          }))
+        // Get unique user IDs from picks
+        const userIds = [...new Set(picksData.map((pick) => pick.user_id))];
+
+        // Fetch contestant details for all users
+        const { data: contestantsData, error: contestantsError } =
+          await supabase.from("contestants").select("*").in("id", userIds);
+
+        if (contestantsError) {
+          throw contestantsError;
+        }
+
+        // Create a map of user_id to contestant data for quick lookup
+        const contestantsMap = new Map<string, Contestant>();
+        contestantsData?.forEach((contestant) => {
+          contestantsMap.set(contestant.id, contestant);
+        });
+
+        // Process leaderboard data with real user information
+        const sortedEntries = picksData
+          .map((entry, index) => {
+            const contestant = contestantsMap.get(entry.user_id);
+            return {
+              user_id: entry.user_id,
+              user_name:
+                contestant?.username || contestant?.full_name || "Unknown User",
+              avatar_url: contestant?.avatar_url,
+              ticker: entry.ticker,
+              total_value: entry.quantity * entry.buy_price,
+              gain_loss: 0, // No gain/loss yet since we're using buy prices
+              gain_loss_percentage: 0,
+              rank: index + 1,
+            };
+          })
           .sort((a, b) => b.total_value - a.total_value)
           .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
