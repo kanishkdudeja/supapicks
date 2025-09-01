@@ -70,25 +70,51 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
           throw contestantsError;
         }
 
+        // Get unique tickers from all picks
+        const uniqueTickers = [
+          ...new Set(picksData.map((pick) => pick.ticker)),
+        ];
+
+        // Fetch current prices for all tickers
+        const { data: tickerPrices, error: tickerError } = await supabase
+          .from("tickers")
+          .select("ticker, price")
+          .in("ticker", uniqueTickers);
+
+        if (tickerError) {
+          console.error("Error fetching ticker prices:", tickerError);
+          // Continue with buy prices if ticker prices fetch fails
+        }
+
+        // Create a map of ticker to current price
+        const tickerPriceMap = new Map<string, number>();
+        tickerPrices?.forEach((ticker) => {
+          tickerPriceMap.set(ticker.ticker, ticker.price);
+        });
+
         // Create a map of user_id to contestant data for quick lookup
         const contestantsMap = new Map<string, Contestant>();
         contestantsData?.forEach((contestant) => {
           contestantsMap.set(contestant.id, contestant);
         });
 
-        // Process leaderboard data with real user information
+        // Process leaderboard data with real-time calculations
         const sortedEntries = picksData
           .map((entry, index) => {
             const contestant = contestantsMap.get(entry.user_id);
+            const currentPrice = tickerPriceMap.get(entry.ticker);
+
+            // Use current price if available, otherwise fall back to buy price
+            const effectivePrice = currentPrice ?? entry.buy_price;
+            const totalValue = entry.quantity * effectivePrice;
+
             return {
               user_id: entry.user_id,
               user_name:
                 contestant?.username || contestant?.full_name || "Unknown User",
               avatar_url: contestant?.avatar_url,
               ticker: entry.ticker,
-              total_value: entry.quantity * entry.buy_price,
-              gain_loss: 0, // No gain/loss yet since we're using buy prices
-              gain_loss_percentage: 0,
+              total_value: totalValue,
               rank: index + 1,
             };
           })

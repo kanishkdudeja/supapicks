@@ -45,8 +45,6 @@ export interface LeaderboardEntry {
   avatar_url?: string;
   ticker: string;
   total_value: number;
-  gain_loss: number;
-  gain_loss_percentage: number;
   rank: number;
 }
 
