@@ -10,6 +10,7 @@ import {
   Contestant,
   getContestStatus,
 } from "@/lib/types";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +24,19 @@ import { Calendar, Users, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { StockPickerModal } from "./stock-picker-modal";
 
+/**
+ * Sorts and ranks leaderboard entries by current value in descending order
+ * @param entries Array of leaderboard entries
+ * @returns Sorted and ranked entries with rank property
+ */
+const sortAndRankLeaderboard = (
+  entries: LeaderboardEntry[]
+): LeaderboardEntry[] => {
+  return entries
+    .sort((a, b) => b.current_value - a.current_value)
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+};
+
 interface ContestDetailProps {
   contest: Contest;
   user: User;
@@ -33,27 +47,45 @@ const createLeaderboard = (
   contestantsMap: Map<string, Contestant>,
   tickerPriceMap: Map<string, number>,
 ): LeaderboardEntry[] => {
-  return picks
-    .map((entry) => {
-      const contestant = contestantsMap.get(entry.user_id);
-      const currentPrice = tickerPriceMap.get(entry.ticker) ?? entry.buy_price;
-      const currentValue = entry.quantity * currentPrice;
+  const entries = picks.map((entry) => {
+    const contestant = contestantsMap.get(entry.user_id);
+    const currentPrice = tickerPriceMap.get(entry.ticker) ?? entry.buy_price;
+    const currentValue = entry.quantity * currentPrice;
 
-      return {
-        user_id: entry.user_id,
-        user_name:
-          contestant?.username || contestant?.full_name || "Unknown user",
-        avatar_url: contestant?.avatar_url,
-        ticker: entry.ticker,
-        quantity: entry.quantity,
-        buy_price: entry.buy_price,
-        current_price: currentPrice,
-        current_value: currentValue,
-        rank: 0, // Will be set after sorting
-      };
-    })
-    .sort((a, b) => b.current_value - a.current_value)
-    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+    return {
+      user_id: entry.user_id,
+      user_name:
+        contestant?.username || contestant?.full_name || "Unknown user",
+      avatar_url: contestant?.avatar_url,
+      ticker: entry.ticker,
+      quantity: entry.quantity,
+      buy_price: entry.buy_price,
+      current_price: currentPrice,
+      current_value: currentValue,
+      rank: 0, // Will be set after sorting
+    };
+  });
+
+  return sortAndRankLeaderboard(entries);
+};
+
+const updateLeaderboardPrices = (
+  leaderboard: LeaderboardEntry[],
+  tickerPriceMap: Map<string, number>,
+): LeaderboardEntry[] => {
+  const entries = leaderboard.map((entry) => {
+    const currentPrice = tickerPriceMap.get(entry.ticker) ?? entry.buy_price;
+    const currentValue = entry.quantity * currentPrice;
+
+    return {
+      ...entry,
+      current_price: currentPrice,
+      current_value: currentValue,
+      rank: 0, // Will be set after sorting
+    };
+  });
+
+  return sortAndRankLeaderboard(entries);
 };
 
 export function ContestDetail({ contest, user }: ContestDetailProps) {
@@ -69,7 +101,6 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
 
   const supabase = createClient();
 
-  // Fetch contest data function
   const fetchContestData = async () => {
     try {
       const { data: picksData, error: picksError } = await supabase
@@ -142,7 +173,9 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     }
   };
 
-  fetchContestData();
+  useEffect(() => {
+    fetchContestData();
+  }, []);
 
   // Real-time subscription for ticker price updates
   useEffect(() => {
@@ -171,65 +204,24 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     }
   }, [uniqueTickers]);
 
-  // Handle leaderboard recalculation when ticker prices change
-  useEffect(() => {
-    if (leaderboard.length > 0) {
-      updateLeaderboardWithNewPrices(contest.id);
-    }
-  }, [tickerPrices]);
-
   const handlePriceUpdate = (payload: { new: Record<string, unknown> }) => {
     const { ticker, price } = payload.new;
 
-    // Update the ticker prices map
-    setTickerPrices((prev) => {
-      const updatedPrices = new Map(prev).set(
+    setTickerPrices((prevPrices) => {
+      const updatedPrices = new Map(prevPrices).set(
         ticker as string,
         price as number,
       );
+
+      setLeaderboard((prevLeaderboard) => {
+        if (prevLeaderboard.length > 0) {
+          return updateLeaderboardPrices(prevLeaderboard, updatedPrices);
+        }
+        return prevLeaderboard;
+      });
+
       return updatedPrices;
     });
-  };
-
-  const updateLeaderboardWithNewPrices = (
-    contestId: string,
-    priceMap?: Map<string, number>,
-  ) => {
-    if (leaderboard.length === 0) return;
-
-    // Use the provided price map or fall back to the current state
-    const currentPrices = priceMap || tickerPrices;
-
-    // Create a map of current picks data from the leaderboard
-    const picksData = leaderboard.map(
-      (entry) =>
-        ({
-          contest_id: contestId,
-          user_id: entry.user_id,
-          ticker: entry.ticker,
-          quantity: entry.quantity,
-          buy_price: entry.buy_price,
-        }) as Pick,
-    );
-
-    // Create contestants map from current leaderboard data
-    const contestantsMap = new Map<string, Contestant>();
-    leaderboard.forEach((entry) => {
-      contestantsMap.set(entry.user_id, {
-        id: entry.user_id,
-        username: entry.user_name,
-        full_name: entry.user_name,
-        avatar_url: entry.avatar_url,
-      } as Contestant);
-    });
-
-    // Use the shared function to recalculate leaderboard
-    const updatedLeaderboard = createLeaderboard(
-      picksData,
-      contestantsMap,
-      currentPrices,
-    );
-    setLeaderboard(updatedLeaderboard);
   };
 
   const handleJoinSuccess = () => {
