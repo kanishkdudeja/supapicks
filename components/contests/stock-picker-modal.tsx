@@ -100,6 +100,24 @@ export function StockPickerModal({
 
       if (pickError) throw pickError;
 
+      // Upsert the ticker price
+      const { error: tickerError } = await supabase
+        .from("tickers")
+        .upsert({
+          ticker: stockData.symbol,
+          price: stockData.price,
+          updated_at: 'now()'
+        }, {
+          onConflict: "ticker",
+          ignoreDuplicates: false
+        });
+
+      if (tickerError) {
+        console.error("Error upserting ticker:", tickerError);
+        // Don't fail the entire operation if ticker upsert fails
+        // The contest join is still successful
+      }
+
       onSuccess();
       onClose();
     } catch (error) {
