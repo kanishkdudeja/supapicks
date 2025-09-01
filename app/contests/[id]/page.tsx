@@ -1,26 +1,28 @@
-import { notFound } from 'next/navigation'
-import { Navigation } from '@/components/navigation'
-import { ContestDetail } from '@/components/contests/contest-detail'
-import { createClient, requireAuth } from '@/lib/supabase/server'
+import { notFound } from "next/navigation";
+import { Navigation } from "@/components/navigation";
+import { ContestDetail } from "@/components/contests/contest-detail";
+import { createClient, requireAuth } from "@/lib/supabase/server";
 
 interface ContestPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
 export default async function ContestPage({ params }: ContestPageProps) {
-  const user = await requireAuth()
-  const supabase = await createClient()
+  const user = await requireAuth();
+  const supabase = await createClient();
+
+  const { id } = await params;
 
   const { data: contest, error } = await supabase
-    .from('contests')
-    .select('*')
-    .eq('id', params.id)
-    .single()
+    .from("contests")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error || !contest) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -30,5 +32,5 @@ export default async function ContestPage({ params }: ContestPageProps) {
         <ContestDetail contest={contest} user={user} />
       </main>
     </div>
-  )
+  );
 }
