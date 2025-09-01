@@ -28,19 +28,48 @@ interface ContestDetailProps {
   user: User;
 }
 
+const createLeaderboard = (
+  picks: Pick[],
+  contestantsMap: Map<string, Contestant>,
+  tickerPriceMap: Map<string, number>,
+): LeaderboardEntry[] => {
+  return picks
+    .map((entry) => {
+      const contestant = contestantsMap.get(entry.user_id);
+      const currentPrice = tickerPriceMap.get(entry.ticker) ?? entry.buy_price;
+      const currentValue = entry.quantity * currentPrice;
+
+      return {
+        user_id: entry.user_id,
+        user_name:
+          contestant?.username || contestant?.full_name || "Unknown user",
+        avatar_url: contestant?.avatar_url,
+        ticker: entry.ticker,
+        quantity: entry.quantity,
+        buy_price: entry.buy_price,
+        current_price: currentPrice,
+        current_value: currentValue,
+        rank: 0, // Will be set after sorting
+      };
+    })
+    .sort((a, b) => b.current_value - a.current_value)
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+};
+
 export function ContestDetail({ contest, user }: ContestDetailProps) {
   const [userPick, setUserPick] = useState<Pick | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [participantCount, setParticipantCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showStockPicker, setShowStockPicker] = useState(false);
+  const [tickerPrices, setTickerPrices] = useState<Map<string, number>>(
+    new Map(),
+  );
+  const [uniqueTickers, setUniqueTickers] = useState<string[]>([]);
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchContestData();
-  }, [contest.id]);
-
+  // Fetch contest data function
   const fetchContestData = async () => {
     try {
       const { data: picksData, error: picksError } = await supabase
@@ -67,14 +96,17 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
           throw contestantsError;
         }
 
-        const uniqueTickers = [
+        const uniqueTickersFromPicks = [
           ...new Set(picksData.map((pick) => pick.ticker)),
         ];
+
+        // Update uniqueTickers state for subscription
+        setUniqueTickers(uniqueTickersFromPicks);
 
         const { data: tickerPrices, error: tickerError } = await supabase
           .from("tickers")
           .select("ticker, price")
-          .in("ticker", uniqueTickers);
+          .in("ticker", uniqueTickersFromPicks);
 
         if (tickerError) {
           console.error("Error fetching ticker prices:", tickerError);
@@ -86,32 +118,19 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
           tickerPriceMap.set(ticker.ticker, ticker.price);
         });
 
+        // Update the tickerPrices state for real-time updates
+        setTickerPrices(tickerPriceMap);
+
         const contestantsMap = new Map<string, Contestant>();
         contestantsData?.forEach((contestant) => {
           contestantsMap.set(contestant.id, contestant);
         });
 
-        const sortedEntries = picksData
-          .map((entry, index) => {
-            const contestant = contestantsMap.get(entry.user_id);
-            const currentPrice = tickerPriceMap.get(entry.ticker);
-
-            // Use current price if available, otherwise fall back to buy price
-            const effectivePrice = currentPrice ?? entry.buy_price;
-            const totalValue = entry.quantity * effectivePrice;
-
-            return {
-              user_id: entry.user_id,
-              user_name:
-                contestant?.username || contestant?.full_name || "Unknown User",
-              avatar_url: contestant?.avatar_url,
-              ticker: entry.ticker,
-              total_value: totalValue,
-              rank: index + 1,
-            };
-          })
-          .sort((a, b) => b.total_value - a.total_value)
-          .map((entry, index) => ({ ...entry, rank: index + 1 }));
+        const sortedEntries = createLeaderboard(
+          picksData,
+          contestantsMap,
+          tickerPriceMap,
+        );
 
         setLeaderboard(sortedEntries);
       }
@@ -121,6 +140,96 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  fetchContestData();
+
+  // Real-time subscription for ticker price updates
+  useEffect(() => {
+    if (getContestStatus(contest) === "active" && uniqueTickers.length > 0) {
+      const changes = supabase
+        .channel("ticker-price-updates")
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "tickers",
+            filter: `ticker=in.(${uniqueTickers.map((t) => `"${t}"`).join(",")})`,
+          },
+          (payload) => {
+            console.log("Price update received:", payload);
+            handlePriceUpdate(payload);
+          },
+        )
+        .subscribe();
+
+      // Cleanup function
+      return () => {
+        changes.unsubscribe();
+      };
+    }
+  }, [uniqueTickers]);
+
+  // Handle leaderboard recalculation when ticker prices change
+  useEffect(() => {
+    if (leaderboard.length > 0) {
+      updateLeaderboardWithNewPrices(contest.id);
+    }
+  }, [tickerPrices]);
+
+  const handlePriceUpdate = (payload: { new: Record<string, unknown> }) => {
+    const { ticker, price } = payload.new;
+
+    // Update the ticker prices map
+    setTickerPrices((prev) => {
+      const updatedPrices = new Map(prev).set(
+        ticker as string,
+        price as number,
+      );
+      return updatedPrices;
+    });
+  };
+
+  const updateLeaderboardWithNewPrices = (
+    contestId: string,
+    priceMap?: Map<string, number>,
+  ) => {
+    if (leaderboard.length === 0) return;
+
+    // Use the provided price map or fall back to the current state
+    const currentPrices = priceMap || tickerPrices;
+
+    // Create a map of current picks data from the leaderboard
+    const picksData = leaderboard.map(
+      (entry) =>
+        ({
+          contest_id: contestId,
+          user_id: entry.user_id,
+          ticker: entry.ticker,
+          quantity: entry.quantity,
+          buy_price: entry.buy_price,
+        }) as Pick,
+    );
+
+    // Create contestants map from current leaderboard data
+    const contestantsMap = new Map<string, Contestant>();
+    leaderboard.forEach((entry) => {
+      contestantsMap.set(entry.user_id, {
+        id: entry.user_id,
+        username: entry.user_name,
+        full_name: entry.user_name,
+        avatar_url: entry.avatar_url,
+      } as Contestant);
+    });
+
+    // Use the shared function to recalculate leaderboard
+    const updatedLeaderboard = createLeaderboard(
+      picksData,
+      contestantsMap,
+      currentPrices,
+    );
+    setLeaderboard(updatedLeaderboard);
   };
 
   const handleJoinSuccess = () => {
@@ -247,7 +356,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
                     </div>
                     <div className="text-right">
                       <div className="font-medium">
-                        ${entry.total_value.toFixed(2)}
+                        ${entry.current_value.toFixed(2)}
                       </div>
                       <div className="text-sm text-gray-600">
                         {entry.ticker}
