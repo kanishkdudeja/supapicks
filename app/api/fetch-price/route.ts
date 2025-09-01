@@ -36,6 +36,13 @@ export async function GET(request: NextRequest) {
     const result = data.chart.result[0];
     const meta = result.meta;
 
+    if ( meta.currency !== 'USD' ) {
+      return NextResponse.json(
+        { error: "Please choose a USD denominated security" },
+        { status: 400 },
+      );
+    }
+
     const currentPrice = meta.regularMarketPrice;
 
     // Get company name from meta

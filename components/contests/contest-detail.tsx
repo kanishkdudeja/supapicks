@@ -56,13 +56,10 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
         const userPickData = picksData.find((pick) => pick.user_id === user.id);
         setUserPick(userPickData || null);
 
-        // Set participant count from the length of picks
         setParticipantCount(picksData.length);
 
-        // Get unique user IDs from picks
         const userIds = [...new Set(picksData.map((pick) => pick.user_id))];
 
-        // Fetch contestant details for all users
         const { data: contestantsData, error: contestantsError } =
           await supabase.from("contestants").select("*").in("id", userIds);
 
@@ -70,12 +67,10 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
           throw contestantsError;
         }
 
-        // Get unique tickers from all picks
         const uniqueTickers = [
           ...new Set(picksData.map((pick) => pick.ticker)),
         ];
 
-        // Fetch current prices for all tickers
         const { data: tickerPrices, error: tickerError } = await supabase
           .from("tickers")
           .select("ticker, price")
@@ -86,19 +81,16 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
           // Continue with buy prices if ticker prices fetch fails
         }
 
-        // Create a map of ticker to current price
         const tickerPriceMap = new Map<string, number>();
         tickerPrices?.forEach((ticker) => {
           tickerPriceMap.set(ticker.ticker, ticker.price);
         });
 
-        // Create a map of user_id to contestant data for quick lookup
         const contestantsMap = new Map<string, Contestant>();
         contestantsData?.forEach((contestant) => {
           contestantsMap.set(contestant.id, contestant);
         });
 
-        // Process leaderboard data with real-time calculations
         const sortedEntries = picksData
           .map((entry, index) => {
             const contestant = contestantsMap.get(entry.user_id);
@@ -290,7 +282,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
                 <div>
                   <div className="font-medium">Single Pick</div>
                   <div className="text-sm text-gray-600">
-                    Choose one security (stock, ETF, commodity)
+                    Choose one security (stock, crypto, ETF, commodity)
                   </div>
                 </div>
               </div>

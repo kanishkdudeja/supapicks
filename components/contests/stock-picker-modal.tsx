@@ -60,7 +60,7 @@ export function StockPickerModal({
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        throw new Error(`${JSON.parse(errorText).error}`);
       }
 
       const data = await response.json();
@@ -73,7 +73,7 @@ export function StockPickerModal({
     } catch (error) {
       console.error("Error searching stock:", error);
       setError(
-        error instanceof Error ? error.message : "Failed to fetch stock data",
+        error instanceof Error ? error.message : "Failed to fetch ticker price",
       );
     } finally {
       setLoading(false);
