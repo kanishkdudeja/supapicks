@@ -55,7 +55,7 @@ export function StockPickerModal({
 
     try {
       const response = await fetch(
-        `/api/stocks/search?ticker=${ticker.toUpperCase()}`,
+        `/api/fetch-price?ticker=${ticker.toUpperCase()}`,
       );
 
       if (!response.ok) {
@@ -101,16 +101,17 @@ export function StockPickerModal({
       if (pickError) throw pickError;
 
       // Upsert the ticker price
-      const { error: tickerError } = await supabase
-        .from("tickers")
-        .upsert({
+      const { error: tickerError } = await supabase.from("tickers").upsert(
+        {
           ticker: stockData.symbol,
           price: stockData.price,
-          updated_at: 'now()'
-        }, {
+          updated_at: "now()",
+        },
+        {
           onConflict: "ticker",
-          ignoreDuplicates: false
-        });
+          ignoreDuplicates: false,
+        },
+      );
 
       if (tickerError) {
         console.error("Error upserting ticker:", tickerError);
