@@ -8,13 +8,11 @@ export interface Contest {
 }
 
 export interface Pick {
-  id: string;
   contest_id: string;
   user_id: string;
   ticker: string;
   quantity: number;
   buy_price: number;
-  created_at: string;
 }
 
 export interface User {
@@ -44,7 +42,10 @@ export interface LeaderboardEntry {
   user_name: string;
   avatar_url?: string;
   ticker: string;
-  total_value: number;
+  quantity: number;
+  buy_price: number;
+  current_price: number;
+  current_value: number;
   rank: number;
 }
 
