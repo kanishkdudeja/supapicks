@@ -11,12 +11,12 @@ A fun stock-picking contest platform built with Supabase and Next.js. Users comp
 
 ## 🚀 Features
 
-🔐 GitHub OAuth login with Supabase Auth
-💰 $1000 virtual budget for each contest
-📈 Pick any security (bond/stock/ETF/commodity/crypto) 
-📊 See where you stand in leaderboard rankings
-🌍 Yahoo Finance data sync via Supabase Edge functions
-🔁 Instant leaderboard updates on the UI with Supabase Realtime
+🔐 GitHub OAuth login with Supabase Auth  
+💰 $1000 virtual budget for each contest  
+📈 Pick any security (bond/stock/ETF/commodity/crypto)  
+📊 See where you stand in leaderboard rankings  
+🌍 Yahoo Finance data sync via Supabase Edge functions  
+🔁 Instant leaderboard updates on the UI with Supabase Realtime  
 
 ## 🛠️ Tech Stack
 
