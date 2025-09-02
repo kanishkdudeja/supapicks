@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const result = data.chart.result[0];
     const meta = result.meta;
 
-    if ( meta.currency !== 'USD' ) {
+    if (meta.currency !== "USD" && meta.currency !== "USX") {
       return NextResponse.json(
         { error: "Please choose a USD denominated security" },
         { status: 400 },
