@@ -1,6 +1,6 @@
 # SupaPicks 🏆
 
-A fun stock-picking contest platform built with Supabase and Next.js. Users compete by picking stocks with a $1000 budget and see who can run up the biggest profit!
+A fun stock-picking contest platform built with Supabase and Next.js. Users compete by picking securities with a $1000 budget and see who can run up the biggest profit!
 
 ## 🎯 How It Works
 
