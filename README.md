@@ -32,6 +32,4 @@ https://supapicks.vercel.app/
 
 Built as a dogfooding project at Supabase by Kanishk Dudeja.
 
----
-
 **Happy Picking! 🚀📈**
