@@ -30,7 +30,7 @@ import { StockPickerModal } from "./stock-picker-modal";
  * @returns Sorted and ranked entries with rank property
  */
 const sortAndRankLeaderboard = (
-  entries: LeaderboardEntry[]
+  entries: LeaderboardEntry[],
 ): LeaderboardEntry[] => {
   return entries
     .sort((a, b) => b.current_value - a.current_value)
@@ -314,7 +314,9 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
               <Trophy className="h-5 w-5 text-yellow-600" />
               <span>Leaderboard</span>
             </CardTitle>
-            <CardDescription>Current rankings</CardDescription>
+            <CardDescription>
+              Current ranking (updates every hour)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {leaderboard.length === 0 ? (
