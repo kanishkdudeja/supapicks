@@ -178,7 +178,7 @@ export function StockPickerModal({
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Enter a ticker symbol
+                Enter a ticker symbol from Yahoo Finance
               </p>
             </div>
 
