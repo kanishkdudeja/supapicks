@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SupaPicks 🏆
 
-## Getting Started
+A fun stock-picking contest platform built with Supabase and Next.js. Users compete by picking stocks with a $1000 budget and see who can run up the biggest profit!
 
-First, run the development server:
+## 🎯 How It Works
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Join a Contest** - Users can join active contests
+2. **Pick Your Stock** - Choose one security (bond, stock, ETF, commodity, crypto) with $1000
+3. **Lock & Watch** - No more trades, just watch your portfolio grow
+4. **Compete & Win** - Highest portfolio value at the end wins!
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+🔐 GitHub OAuth login with Supabase Auth
+💰 $1000 virtual budget for each contest
+📈 Pick any security (bond/stock/ETF/commodity/crypto) 
+📊 See where you stand in leaderboard rankings
+🌍 Yahoo Finance data sync via Supabase Edge functions
+🔁 Instant leaderboard updates on the UI with Supabase Realtime
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+- Supabase (Auth, Postgres, RLS, Realtime, Edge Functions)
+- Next.js (App Router)
+- TailwindCSS
+- Shadcn/ui
+- Deployed on Vercel
 
-To learn more about Next.js, take a look at the following resources:
+## 🙏 Acknowledgments
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Built as a dogfooding project at Supabase by Kanishk Dudeja.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Happy Picking! 🚀📈**
