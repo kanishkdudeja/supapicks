@@ -2,6 +2,8 @@
 
 A fun stock-picking contest platform built with Supabase and Next.js. Users compete by picking securities with a $1000 budget and see who can run up the biggest profit!
 
+https://supapicks.vercel.app/
+
 ## 🎯 How It Works
 
 1. **Join a Contest** - Users can join active contests
