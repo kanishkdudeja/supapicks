@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Trophy } from "lucide-react";
+import { Calendar, Users, Trophy, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { StockPickerModal } from "./stock-picker-modal";
 
@@ -94,6 +94,7 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
   const [participantCount, setParticipantCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showStockPicker, setShowStockPicker] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [tickerPrices, setTickerPrices] = useState<Map<string, number>>(
     new Map(),
   );
@@ -229,6 +230,21 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
     fetchContestData();
   };
 
+  const handleRefreshPrices = async () => {
+    try {
+      setRefreshing(true);
+      const { data, error } = await supabase.functions.invoke('update-ticker-prices');
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error calling update ticker prices function:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const status = getContestStatus(contest);
   const canJoin = !userPick && (status === "upcoming" || status === "active");
 
@@ -310,10 +326,21 @@ export function ContestDetail({ contest, user }: ContestDetailProps) {
         {/* Leaderboard */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Trophy className="h-5 w-5 text-yellow-600" />
-              <span>Leaderboard</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Trophy className="h-5 w-5 text-yellow-600" />
+                <span>Leaderboard</span>
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefreshPrices}
+                disabled={refreshing}
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
             <CardDescription>
               Current ranking (updates every hour)
             </CardDescription>
