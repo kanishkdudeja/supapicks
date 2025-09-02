@@ -111,7 +111,10 @@ export async function ContestList({ user }: ContestListProps) {
                   </div>
 
                   <div className="pt-2">
-                    <Button asChild className="w-full">
+                    <Button
+                      asChild
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
                       <Link href={`/contests/${contest.id}`}>View Contest</Link>
                     </Button>
                   </div>
